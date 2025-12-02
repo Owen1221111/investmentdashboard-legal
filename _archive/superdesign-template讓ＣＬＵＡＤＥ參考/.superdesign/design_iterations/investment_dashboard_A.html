@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投資儀表板 - 版本 A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="investment_dashboard_theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: var(--background);
+            color: var(--foreground);
+            font-family: var(--font-sans);
+        }
+        .main-card {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            animation: slideInDown 0.6s ease-out;
+        }
+        .stat-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
+            animation: slideInUp 0.4s ease-out;
+        }
+        .stat-card:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-card-hover);
+        }
+        .chart-container {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+        }
+        .data-table {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+        }
+        @keyframes slideInDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .profit { color: var(--profit-color); }
+        .loss { color: var(--loss-color); }
+        .btn-primary {
+            background: var(--button-primary);
+            color: white;
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background: var(--button-primary-hover);
+        }
+        .trend-area {
+            background: linear-gradient(180deg, var(--trend-gradient-start) 0%, var(--trend-gradient-end) 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4">
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- 主要總金額卡片 -->
+        <div class="main-card p-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2" style="color: var(--card-text-primary)">10,000,000</h1>
+                    <p class="profit text-lg font-medium">總損益: +125,000 (+1.25%) ↗</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="btn-primary px-3 py-1 text-sm">1D</button>
+                    <button class="btn-secondary px-3 py-1 text-sm">7D</button>
+                    <button class="btn-secondary px-3 py-1 text-sm">1M</button>
+                    <button class="btn-secondary px-3 py-1 text-sm">3M</button>
+                    <button class="btn-secondary px-3 py-1 text-sm">1Y</button>
+                </div>
+            </div>
+            <div class="trend-area rounded-lg h-32"></div>
+        </div>
+
+        <!-- 統計卡片組 -->
+        <div class="grid grid-cols-3 gap-6">
+            <div class="stat-card p-6 text-center">
+                <h3 class="text-sm font-medium mb-2" style="color: var(--card-text-secondary)">匯入累積</h3>
+                <p class="text-2xl font-bold" style="color: var(--card-text-primary)">1,500,000</p>
+            </div>
+            <div class="stat-card p-6 text-center">
+                <h3 class="text-sm font-medium mb-2" style="color: var(--card-text-secondary)">總額報酬率</h3>
+                <p class="text-2xl font-bold profit">+8.5%</p>
+            </div>
+            <div class="stat-card p-6 text-center">
+                <h3 class="text-sm font-medium mb-2" style="color: var(--card-text-secondary)">現金</h3>
+                <p class="text-2xl font-bold" style="color: var(--card-text-primary)">250,000</p>
+            </div>
+        </div>
+
+        <!-- 主要內容區域 -->
+        <div class="grid grid-cols-3 gap-6">
+            <!-- 資產配置圖表 -->
+            <div class="col-span-1 chart-container p-6">
+                <h3 class="text-lg font-semibold mb-4" style="color: var(--header-text)">資產配置</h3>
+                <div class="relative" style="height: 200px;">
+                    <canvas id="pieChart"></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold" style="color: var(--card-text-primary)">45%</p>
+                            <p class="text-sm" style="color: var(--card-text-secondary)">美股</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="chart-cash">● 現金 20%</span>
+                        <span class="chart-bonds">● 債券 25%</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="chart-structured">● 結構型 10%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 投資資訊卡片組 -->
+            <div class="col-span-2 grid grid-cols-2 gap-4">
+                <div class="stat-card p-4">
+                    <h4 class="font-medium mb-2" style="color: var(--header-text)">美股</h4>
+                    <p class="profit text-lg font-semibold">報酬率 +12%</p>
+                    <div class="trend-area rounded h-16 mt-2"></div>
+                </div>
+                <div class="stat-card p-4">
+                    <h4 class="font-medium mb-2" style="color: var(--header-text)">債券</h4>
+                    <p class="profit text-lg font-semibold">報酬率 +3%</p>
+                    <div class="trend-area rounded h-16 mt-2"></div>
+                </div>
+                <div class="stat-card p-4 col-span-2">
+                    <h4 class="font-medium mb-2" style="color: var(--header-text)">債券每月配息</h4>
+                    <div style="height: 80px;">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表格區域 -->
+        <div class="space-y-6">
+            <!-- 月度資產明細 -->
+            <div class="data-table">
+                <div class="flex justify-between items-center p-4 border-b" style="border-color: var(--border)">
+                    <h3 class="font-semibold" style="color: var(--header-text)">📋 月度資產明細</h3>
+                    <div class="flex space-x-2">
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="arrow-up-down" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="edit" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead style="background: oklch(0.98 0.005 220)">
+                            <tr>
+                                <th class="p-3 text-left font-semibold">日期</th>
+                                <th class="p-3 text-left font-semibold">資產類型</th>
+                                <th class="p-3 text-left font-semibold">金額</th>
+                                <th class="p-3 text-left font-semibold">報酬率</th>
+                                <th class="p-3 text-left font-semibold">備註</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-3">2024/12</td>
+                                <td class="p-3">美股</td>
+                                <td class="p-3">4,500,000</td>
+                                <td class="p-3 profit">+12.5%</td>
+                                <td class="p-3">-</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3">2024/12</td>
+                                <td class="p-3">債券</td>
+                                <td class="p-3">2,500,000</td>
+                                <td class="p-3 profit">+3.2%</td>
+                                <td class="p-3">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 公司債明細 -->
+            <div class="data-table">
+                <div class="flex justify-between items-center p-4 border-b" style="border-color: var(--border)">
+                    <h3 class="font-semibold" style="color: var(--header-text)">📋 公司債明細</h3>
+                    <div class="flex space-x-2">
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="arrow-up-down" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="edit" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead style="background: oklch(0.98 0.005 220)">
+                            <tr>
+                                <th class="p-3 text-left font-semibold">公司名稱</th>
+                                <th class="p-3 text-left font-semibold">債券代號</th>
+                                <th class="p-3 text-left font-semibold">購入價格</th>
+                                <th class="p-3 text-left font-semibold">目前價格</th>
+                                <th class="p-3 text-left font-semibold">收益率</th>
+                                <th class="p-3 text-left font-semibold">到期日</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="p-3">Apple Inc.</td>
+                                <td class="p-3">AAPL2024</td>
+                                <td class="p-3">98.50</td>
+                                <td class="p-3">102.30</td>
+                                <td class="p-3 profit">+3.86%</td>
+                                <td class="p-3">2024/12/31</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 損益表 -->
+            <div class="data-table">
+                <div class="flex justify-between items-center p-4 border-b" style="border-color: var(--border)">
+                    <h3 class="font-semibold" style="color: var(--header-text)">📋 損益表</h3>
+                    <div class="flex space-x-2">
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="arrow-up-down" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="edit" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead style="background: oklch(0.98 0.005 220)">
+                            <tr>
+                                <th class="p-3 text-left font-semibold">交易日期</th>
+                                <th class="p-3 text-left font-semibold">資產</th>
+                                <th class="p-3 text-left font-semibold">買入價格</th>
+                                <th class="p-3 text-left font-semibold">賣出價格</th>
+                                <th class="p-3 text-left font-semibold">損益</th>
+                                <th class="p-3 text-left font-semibold">手續費</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="p-3">2024/12/01</td>
+                                <td class="p-3">AAPL</td>
+                                <td class="p-3">150.00</td>
+                                <td class="p-3">165.50</td>
+                                <td class="p-3 profit">+15.50</td>
+                                <td class="p-3">2.50</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化圖標
+        lucide.createIcons();
+
+        // 圓餅圖
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [45, 20, 25, 10],
+                    backgroundColor: [
+                        'oklch(0.65 0.20 15)', // 美股 - 橘紅色
+                        'oklch(0.75 0.15 45)', // 現金 - 金黃色
+                        'oklch(0.55 0.18 140)', // 債券 - 綠色
+                        'oklch(0.45 0.15 260)' // 結構型 - 紫色
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                cutout: '60%'
+            }
+        });
+
+        // 長條圖
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                datasets: [{
+                    data: [1200, 1350, 1100, 1450, 1300, 1500],
+                    backgroundColor: 'oklch(0.55 0.18 140)',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { display: false },
+                    x: { display: false }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

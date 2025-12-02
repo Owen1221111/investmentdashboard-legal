@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvestmentDashboard - 投資管理儀表板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .section {
+            margin: 30px 0;
+        }
+
+        .section-title {
+            color: #2d3748;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .link-card {
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #2d3748;
+            transition: all 0.3s;
+            border: 2px solid #e2e8f0;
+        }
+
+        .link-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .link-card-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .link-card-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .link-card-desc {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .links {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">📊</div>
+            <h1>InvestmentDashboard</h1>
+            <p class="subtitle">專業的客戶資產與保險管理工具</p>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📱 關於應用程式</h2>
+            <p>InvestmentDashboard 是一款專為金融從業人員和理財顧問設計的 iOS 應用程式，幫助您輕鬆管理客戶資產組合、保險保單，並提供專業的數據分析和視覺化報表。</p>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🌏 語言 / Languages</h2>
+            <div class="links">
+                <a href="privacy-zh.html" class="link-card">
+                    <div class="link-card-icon">🇹🇼</div>
+                    <div class="link-card-title">隱私權政策</div>
+                    <div class="link-card-desc">Privacy Policy (繁體中文)</div>
+                </a>
+                <a href="privacy-en.html" class="link-card">
+                    <div class="link-card-icon">🇺🇸</div>
+                    <div class="link-card-title">Privacy Policy</div>
+                    <div class="link-card-desc">English Version</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📄 使用條款 / Terms of Service</h2>
+            <div class="links">
+                <a href="terms-zh.html" class="link-card">
+                    <div class="link-card-icon">🇹🇼</div>
+                    <div class="link-card-title">使用條款</div>
+                    <div class="link-card-desc">Terms of Service (繁體中文)</div>
+                </a>
+                <a href="terms-en.html" class="link-card">
+                    <div class="link-card-icon">🇺🇸</div>
+                    <div class="link-card-title">Terms of Service</div>
+                    <div class="link-card-desc">English Version</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📞 聯絡我們 / Contact Us</h2>
+            <p>如有任何問題或建議，請透過以下方式聯絡我們：</p>
+            <p style="margin-top: 10px;">
+                <strong>電子郵件 Email：</strong><a href="mailto:stockbankapp@gmail.com" style="color: #667eea;">stockbankapp@gmail.com</a>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 Owen Liu. All rights reserved.</p>
+            <p style="margin-top: 10px;">Made with ❤️ for financial professionals</p>
+        </div>
+    </div>
+</body>
+</html>

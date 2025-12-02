@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "iganbold.superdesign",
+    "GitHub.copilot",
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "formulahendry.auto-rename-tag",
+    "ms-vscode.vscode-json",
+    "ms-vscode.vscode-css-peek"
+  ],
+  "unwantedRecommendations": []
+}
