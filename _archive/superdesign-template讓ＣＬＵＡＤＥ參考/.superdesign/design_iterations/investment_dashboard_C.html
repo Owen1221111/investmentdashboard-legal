@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投資儀表板 - 版本 C</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="investment_dashboard_theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: var(--background);
+            color: var(--foreground);
+            font-family: var(--font-sans);
+        }
+        .flow-card {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
+            animation: slideInUp 0.5s ease-out;
+        }
+        .flow-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-card-hover);
+        }
+        .main-header {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            animation: slideInDown 0.6s ease-out;
+        }
+        .large-trend {
+            background: linear-gradient(180deg, var(--trend-gradient-start) 0%, var(--trend-gradient-end) 100%);
+            border-radius: var(--radius);
+            height: 80px;
+        }
+        .chart-container {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+        }
+        .investment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .dividend-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
+        }
+        .dividend-card:hover {
+            transform: scale(1.02);
+        }
+        .separate-table {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            margin-bottom: 2rem;
+        }
+        @keyframes slideInDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .profit { color: var(--profit-color); }
+        .loss { color: var(--loss-color); }
+        .btn-primary {
+            background: var(--button-primary);
+            color: white;
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background: var(--button-primary-hover);
+        }
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <!-- 主要標題區域 -->
+        <div class="main-header p-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h1 class="text-5xl font-bold mb-2" style="color: var(--card-text-primary)">10,000,000</h1>
+                    <p class="profit text-xl font-medium">總損益: +125,000 (+1.25%) ↗</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="btn-primary px-4 py-2">1D</button>
+                    <button class="btn-secondary px-4 py-2">7D</button>
+                    <button class="btn-secondary px-4 py-2">1M</button>
+                    <button class="btn-secondary px-4 py-2">3M</button>
+                    <button class="btn-secondary px-4 py-2">1Y</button>
+                </div>
+            </div>
+            <!-- 大型走勢圖 -->
+            <div class="large-trend" style="height: 100px;"></div>
+        </div>
+
+        <!-- 統計卡片行 -->
+        <div class="grid grid-cols-4 gap-6">
+            <div class="flow-card p-6 text-center stagger-1">
+                <h3 class="text-sm font-medium mb-3" style="color: var(--card-text-secondary)">匯入累積</h3>
+                <p class="text-2xl font-bold" style="color: var(--card-text-primary)">1,500,000</p>
+            </div>
+            <div class="flow-card p-6 text-center stagger-2">
+                <h3 class="text-sm font-medium mb-3" style="color: var(--card-text-secondary)">總額報酬率</h3>
+                <p class="text-2xl font-bold profit">+8.5%</p>
+            </div>
+            <div class="flow-card p-6 text-center stagger-3">
+                <h3 class="text-sm font-medium mb-3" style="color: var(--card-text-secondary)">現金</h3>
+                <p class="text-2xl font-bold" style="color: var(--card-text-primary)">250,000</p>
+            </div>
+            <div class="chart-container p-6 stagger-4">
+                <h3 class="text-lg font-semibold mb-4 text-center" style="color: var(--header-text)">資產配置</h3>
+                <div class="relative" style="height: 160px;">
+                    <canvas id="pieChart"></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold" style="color: var(--card-text-primary)">45%</p>
+                            <p class="text-sm" style="color: var(--card-text-secondary)">美股</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 text-center space-y-1 text-xs">
+                    <div class="flex justify-center space-x-4">
+                        <span class="chart-cash">● 現金 20%</span>
+                        <span class="chart-bonds">● 債券 25%</span>
+                    </div>
+                    <div>
+                        <span class="chart-structured">● 結構型 10%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 投資資訊區域 -->
+        <div class="investment-grid">
+            <div class="flow-card p-6">
+                <h4 class="font-semibold mb-3" style="color: var(--header-text)">美股</h4>
+                <p class="profit text-xl font-bold mb-4">報酬率 +12%</p>
+                <div class="large-trend"></div>
+            </div>
+            <div class="flow-card p-6">
+                <h4 class="font-semibold mb-3" style="color: var(--header-text)">債券</h4>
+                <p class="profit text-xl font-bold mb-4">報酬率 +3%</p>
+                <div class="large-trend"></div>
+            </div>
+            <div class="dividend-card p-6">
+                <h4 class="font-semibold mb-4" style="color: var(--header-text)">債券每月配息</h4>
+                <div style="height: 100px;">
+                    <canvas id="barChart"></canvas>
+                </div>
+                <div class="mt-4 text-center">
+                    <p class="text-sm" style="color: var(--card-text-secondary)">本月配息: $1,500</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 獨立表格區域 -->
+        <div class="space-y-6">
+            <!-- 月度資產明細 -->
+            <div class="separate-table">
+                <div class="flex justify-between items-center p-6 border-b" style="border-color: var(--border)">
+                    <h3 class="text-xl font-semibold" style="color: var(--header-text)">📋 月度資產明細</h3>
+                    <div class="flex space-x-2">
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="arrow-up-down" class="w-5 h-5"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="download" class="w-5 h-5"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="edit" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead style="background: oklch(0.98 0.005 220)">
+                            <tr>
+                                <th class="p-4 text-left font-semibold">日期</th>
+                                <th class="p-4 text-left font-semibold">資產類型</th>
+                                <th class="p-4 text-left font-semibold">金額</th>
+                                <th class="p-4 text-left font-semibold">報酬率</th>
+                                <th class="p-4 text-left font-semibold">備註</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-4">2024/12</td>
+                                <td class="p-4">美股</td>
+                                <td class="p-4">4,500,000</td>
+                                <td class="p-4 profit">+12.5%</td>
+                                <td class="p-4">主要持股: AAPL, MSFT</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-4">2024/12</td>
+                                <td class="p-4">債券</td>
+                                <td class="p-4">2,500,000</td>
+                                <td class="p-4 profit">+3.2%</td>
+                                <td class="p-4">政府債券為主</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4">2024/12</td>
+                                <td class="p-4">現金</td>
+                                <td class="p-4">250,000</td>
+                                <td class="p-4">+0.5%</td>
+                                <td class="p-4">高息活存</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 公司債明細 -->
+            <div class="separate-table">
+                <div class="flex justify-between items-center p-6 border-b" style="border-color: var(--border)">
+                    <h3 class="text-xl font-semibold" style="color: var(--header-text)">📋 公司債明細</h3>
+                    <div class="flex space-x-2">
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="arrow-up-down" class="w-5 h-5"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="download" class="w-5 h-5"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="edit" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead style="background: oklch(0.98 0.005 220)">
+                            <tr>
+                                <th class="p-4 text-left font-semibold">公司名稱</th>
+                                <th class="p-4 text-left font-semibold">債券代號</th>
+                                <th class="p-4 text-left font-semibold">購入價格</th>
+                                <th class="p-4 text-left font-semibold">目前價格</th>
+                                <th class="p-4 text-left font-semibold">收益率</th>
+                                <th class="p-4 text-left font-semibold">到期日</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-4">Apple Inc.</td>
+                                <td class="p-4">AAPL2024</td>
+                                <td class="p-4">98.50</td>
+                                <td class="p-4">102.30</td>
+                                <td class="p-4 profit">+3.86%</td>
+                                <td class="p-4">2024/12/31</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4">Microsoft Corp.</td>
+                                <td class="p-4">MSFT2025</td>
+                                <td class="p-4">95.20</td>
+                                <td class="p-4">98.75</td>
+                                <td class="p-4 profit">+3.73%</td>
+                                <td class="p-4">2025/06/15</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 損益表 -->
+            <div class="separate-table">
+                <div class="flex justify-between items-center p-6 border-b" style="border-color: var(--border)">
+                    <h3 class="text-xl font-semibold" style="color: var(--header-text)">📋 損益表</h3>
+                    <div class="flex space-x-2">
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="arrow-up-down" class="w-5 h-5"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="download" class="w-5 h-5"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded">
+                            <i data-lucide="edit" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead style="background: oklch(0.98 0.005 220)">
+                            <tr>
+                                <th class="p-4 text-left font-semibold">交易日期</th>
+                                <th class="p-4 text-left font-semibold">資產</th>
+                                <th class="p-4 text-left font-semibold">買入價格</th>
+                                <th class="p-4 text-left font-semibold">賣出價格</th>
+                                <th class="p-4 text-left font-semibold">損益</th>
+                                <th class="p-4 text-left font-semibold">手續費</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-4">2024/12/01</td>
+                                <td class="p-4">AAPL</td>
+                                <td class="p-4">150.00</td>
+                                <td class="p-4">165.50</td>
+                                <td class="p-4 profit">+15.50</td>
+                                <td class="p-4">2.50</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4">2024/11/28</td>
+                                <td class="p-4">TSLA</td>
+                                <td class="p-4">220.00</td>
+                                <td class="p-4">195.30</td>
+                                <td class="p-4 loss">-24.70</td>
+                                <td class="p-4">3.20</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化圖標
+        lucide.createIcons();
+
+        // 圓餅圖
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [45, 20, 25, 10],
+                    backgroundColor: [
+                        'oklch(0.65 0.20 15)', // 美股
+                        'oklch(0.75 0.15 45)', // 現金
+                        'oklch(0.55 0.18 140)', // 債券
+                        'oklch(0.45 0.15 260)' // 結構型
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                cutout: '60%',
+                animation: {
+                    animateRotate: true,
+                    duration: 1200
+                }
+            }
+        });
+
+        // 長條圖
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['7月', '8月', '9月', '10月', '11月', '12月'],
+                datasets: [{
+                    data: [1200, 1350, 1100, 1450, 1300, 1500],
+                    backgroundColor: 'oklch(0.55 0.18 140)',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { 
+                        display: true,
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    },
+                    x: { 
+                        display: true,
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    }
+                },
+                animation: {
+                    delay: (context) => context.dataIndex * 100,
+                    duration: 800
+                }
+            }
+        });
+    </script>
+</body>
+</html>

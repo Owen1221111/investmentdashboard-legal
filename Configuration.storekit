@@ -1,0 +1,91 @@
+{
+  "appPolicies" : {
+    "eula" : "https://owen1221111.github.io/investmentdashboard-legal/terms-zh.html",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : "https://owen1221111.github.io/investmentdashboard-legal/privacy-zh.html"
+      },
+      {
+        "locale" : "zh_TW",
+        "policyText" : "",
+        "policyURL" : "https://owen1221111.github.io/investmentdashboard-legal/privacy-zh.html"
+      }
+    ]
+  },
+  "identifier" : "86B57370",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "1675C3D8",
+      "localizations" : [
+
+      ],
+      "name" : "InvestmentDashboard Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "100",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "F24AF581",
+          "introductoryOffer" : {
+            "displayPrice" : "0",
+            "internalID" : "2854A36E",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1M"
+          },
+          "localizations" : [
+            {
+              "description" : "Unlock all premium features",
+              "displayName" : "Monthly Subscription",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "解鎖所有進階功能",
+              "displayName" : "月費方案",
+              "locale" : "zh_TW"
+            }
+          ],
+          "productID" : "com.owenliu.investmentdashboard.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly Subscription ",
+          "subscriptionGroupID" : "1675C3D8",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

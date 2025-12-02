@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投資儀表板 - 版本 B</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="investment_dashboard_theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: var(--background);
+            color: var(--foreground);
+            font-family: var(--font-sans);
+        }
+        /* Mobile-first responsive breakpoints */
+        @media (max-width: 768px) {
+            .mobile-stack { 
+                grid-template-columns: 1fr !important; 
+            }
+            .mobile-stats-vertical {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            .mobile-stats-card {
+                width: 100% !important;
+                max-width: none !important;
+            }
+            .mobile-chart-height {
+                height: 80px !important;
+            }
+            .mobile-grid-2 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            .mobile-full-width {
+                col-span: 2 !important;
+            }
+            
+            /* 頂部導航欄手機版調整 */
+            .mobile-nav-compact {
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+            }
+            .mobile-nav-compact .flex-1 {
+                flex-basis: 100% !important;
+                order: 3 !important;
+            }
+            .mobile-nav-compact button span {
+                display: none !important;
+            }
+            .mobile-subscription-mobile {
+                margin-top: 8px !important;
+                justify-content: center !important;
+            }
+        }
+        .compact-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
+            animation: slideInUp 0.4s ease-out;
+        }
+        .compact-card:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-card-hover);
+        }
+        .main-header {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            animation: slideInDown 0.6s ease-out;
+        }
+        .chart-container {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+        }
+        .integrated-table {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+        }
+        .tab-container {
+            border-bottom: 1px solid var(--border);
+        }
+        .tab-button {
+            padding: 12px 24px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .tab-button.active {
+            border-bottom-color: var(--button-primary);
+            color: var(--button-primary);
+            font-weight: 600;
+        }
+        .tab-button:not(.active):hover {
+            background: var(--button-secondary);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes slideInDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .profit { color: var(--profit-color); }
+        .loss { color: var(--loss-color); }
+        .btn-primary {
+            background: var(--button-primary);
+            color: white;
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background: var(--button-primary-hover);
+        }
+        .trend-area {
+            background: linear-gradient(180deg, var(--trend-gradient-start) 0%, var(--trend-gradient-end) 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen pt-12 p-4">
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- 頂部導航欄 -->
+        <div class="fixed top-0 left-0 right-0 z-50 px-2 py-1 flex items-center justify-between mobile-nav-compact" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0, 0, 0, 0.1); min-height: 36px;">
+            <!-- 左側按鈕組 -->
+            <div class="flex items-center space-x-1">
+                <button class="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded-md transition-colors" onclick="openClientList()">
+                    <i data-lucide="menu" class="w-4 h-4" style="color: var(--card-text-primary);"></i>
+                    <span class="text-xs font-medium" style="color: var(--card-text-secondary);">客戶列表</span>
+                </button>
+                
+                <button class="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded-md transition-colors" onclick="openSortMenu()">
+                    <i data-lucide="arrow-up-down" class="w-4 h-4" style="color: var(--card-text-primary);"></i>
+                    <span class="text-xs font-medium" style="color: var(--card-text-secondary);">排序</span>
+                </button>
+            </div>
+            
+            <!-- 中間：訂閱狀態提醒 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-md px-2 py-1 flex items-center space-x-1">
+                <i data-lucide="crown" class="w-3 h-3 text-blue-600"></i>
+                <span class="text-xs font-medium text-blue-700">付費版 • 23天</span>
+            </div>
+            
+            <!-- 右側：新增資料按鈕 -->
+            <button class="btn-primary flex items-center space-x-1 px-2 py-1 text-xs" onclick="addNewData()">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span class="font-medium">新增</span>
+            </button>
+        </div>
+        <!-- 主要標題和統計區域 -->
+        <div class="main-header p-6" style="background: var(--card); border-radius: 20px; box-shadow: var(--shadow-card);">
+            <!-- 上方：總額數字 + 統計卡片群組 -->
+            <div class="flex justify-between items-start">
+                <!-- 左側：總額數字區域 -->
+                <div class="flex-1 flex flex-col justify-between h-44">
+                    <div style="padding-top: 24px;"> <!-- 對齊小群組卡片內的padding -->
+                        <h2 class="text-sm font-medium mb-2 leading-none" style="color: var(--header-text)">總資產</h2>
+                        <h1 class="text-4xl font-bold mb-2" style="color: var(--card-text-primary)">10,000,000</h1>
+                        <p class="profit text-lg font-medium">總損益: +125,000 (+1.25%)</p>
+                    </div>
+                    
+                    <!-- 時間按鈕對齊小群組卡片下緣 - 縮小尺寸 -->
+                    <div class="flex space-x-1.5">
+                        <button class="btn-primary px-2.5 py-0.5 text-xs">1D</button>
+                        <button class="btn-secondary px-2.5 py-0.5 text-xs">7D</button>
+                        <button class="btn-secondary px-2.5 py-0.5 text-xs">1M</button>
+                        <button class="btn-secondary px-2.5 py-0.5 text-xs">3M</button>
+                        <button class="btn-secondary px-2.5 py-0.5 text-xs">1Y</button>
+                    </div>
+                </div>
+
+                <!-- 右側：整合卡片群組 - 基線對齊 -->
+                <div class="compact-card w-80" style="padding: 24px 24px 24px 24px; border-radius: 20px;">
+                    <div class="grid grid-cols-2 gap-4 h-32">
+                        <!-- 左上：總匯入累積 - 基線對齊總資產 -->
+                        <div class="relative overflow-hidden flex flex-col">
+                            <div class="relative z-10 p-2">
+                                <h3 class="text-sm font-medium mb-1 leading-none" style="color: var(--card-text-secondary)">總匯入</h3>
+                                <p class="text-lg font-bold mb-1" style="color: var(--card-text-primary)">1,500,000</p>
+                                <p class="text-xs profit">本月 +5.2%</p>
+                            </div>
+                            <!-- 小型走勢圖背景 -->
+                            <div class="absolute bottom-0 right-0 w-16 h-10 opacity-20">
+                                <svg viewBox="0 0 64 40" class="w-full h-full">
+                                    <path d="M0,30 L10,28 L20,24 L30,30 L40,20 L50,22 L64,16" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- 右邊：總額報酬率（凸顯大方塊） -->
+                        <div class="row-span-2 relative overflow-hidden p-4" style="background: linear-gradient(135deg, var(--profit-color), var(--profit-light)); box-shadow: 0 4px 12px oklch(0.45 0.08 150 / 0.15); border-radius: 16px;">
+                            <div class="relative z-10 h-full flex flex-col justify-center">
+                                <h3 class="text-sm font-medium mb-2 text-white opacity-95">總額報酬率</h3>
+                                <p class="text-3xl font-bold text-white mb-2">+8.5%</p>
+                                <p class="text-base text-white opacity-85">較上月 +1.2%</p>
+                            </div>
+                            <!-- 走勢圖背景 -->
+                            <div class="absolute bottom-4 right-4 w-20 h-12 opacity-25 text-white">
+                                <svg viewBox="0 0 80 48" class="w-full h-full">
+                                    <path d="M0,40 L15,35 L25,30 L40,25 L55,20 L70,15 L80,10" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="80" cy="10" r="2" fill="currentColor"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- 左下：現金（高級灰色） -->
+                        <div class="relative overflow-hidden p-2" style="background: var(--premium-gray); border: 1px solid oklch(0.85 0.002 220); border-radius: 16px;">
+                            <div class="relative z-10">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h3 class="text-sm font-medium" style="color: var(--premium-gray-text)">現金</h3>
+                                    <div class="w-5 h-5 rounded-full flex items-center justify-center" style="background: oklch(0.82 0.002 220);">
+                                        <i data-lucide="banknote" class="w-3 h-3" style="color: var(--premium-gray-text);"></i>
+                                    </div>
+                                </div>
+                                <p class="text-lg font-bold mb-1" style="color: var(--card-text-primary)">250,000</p>
+                                <p class="text-xs" style="color: var(--premium-gray-text)">活存 0.5%</p>
+                            </div>
+                            <!-- 細微的裝飾線 -->
+                            <div class="absolute bottom-0 left-0 w-full h-0.5" style="background: linear-gradient(90deg, transparent, oklch(0.82 0.002 220), transparent);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下方：總額走勢圖 - 透明背景 (放大) -->
+            <div class="rounded-lg h-32 mt-3 relative overflow-hidden" 
+                 style="background: transparent; 
+                        border: 1px solid oklch(0.85 0.01 220 / 0.3);">
+                <!-- 模擬走勢線圖 -->
+                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 800 128" preserveAspectRatio="none">
+                    <!-- 漸層定義 -->
+                    <defs>
+                        <!-- 線條漸層 -->
+                        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 0.4"/>
+                            <stop offset="50%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 0.8"/>
+                            <stop offset="100%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 1"/>
+                        </linearGradient>
+                        
+                        <!-- 下方填充漸層 -->
+                        <linearGradient id="fillGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 0.3"/>
+                            <stop offset="50%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 0.1"/>
+                            <stop offset="100%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 0"/>
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- 線條下方的漸層填充 -->
+                    <path d="M0,90 L50,88 L100,85 L150,92 L200,78 L250,82 L300,68 L350,72 L400,60 L450,55 L500,58 L550,50 L600,45 L650,48 L700,40 L750,38 L800,35 L800,128 L0,128 Z" 
+                          fill="url(#fillGradient)"/>
+                    
+                    <!-- 走勢線 - 有漸層效果 -->
+                    <path d="M0,90 L50,88 L100,85 L150,92 L200,78 L250,82 L300,68 L350,72 L400,60 L450,55 L500,58 L550,50 L600,45 L650,48 L700,40 L750,38 L800,35" 
+                          stroke="url(#lineGradient)" 
+                          stroke-width="3" 
+                          fill="none"/>
+                    
+                    <!-- 終點圓點 -->
+                    <circle cx="800" cy="35" r="3" fill="oklch(0.65 0.20 15)"/>
+                    
+                    <!-- 網格線 - 適配透明背景 -->
+                    <g stroke="oklch(0.75 0.01 220 / 0.4)" stroke-width="0.5">
+                        <line x1="0" y1="32" x2="800" y2="32"/>
+                        <line x1="0" y1="64" x2="800" y2="64"/>
+                        <line x1="0" y1="96" x2="800" y2="96"/>
+                    </g>
+                </svg>
+                
+                <!-- 數值標籤 -->
+                <div class="absolute top-2 right-4 text-xs font-medium profit" style="opacity: 0.9;">
+                    +1.25%
+                </div>
+                
+                <!-- 時間標籤 -->
+                <div class="absolute bottom-2 left-4 text-xs" style="color: var(--card-text-primary); opacity: 0.7;">
+                    過去 24 小時
+                </div>
+            </div>
+        </div>
+
+        <!-- 中間內容區域 - 新的6列動態佈局 -->
+        <div class="grid grid-cols-6 gap-4">
+            <!-- 資產配置 - 2x2 大卡片 (可滑動) -->
+            <div class="col-span-2 row-span-2 chart-container p-6 relative overflow-hidden" style="border-radius: 20px;">
+                <!-- 標題欄與指示器 -->
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold" style="color: var(--header-text)" id="assetTitle">資產配置</h3>
+                    <div class="flex space-x-1">
+                        <div class="w-2 h-2 rounded-full bg-blue-500" id="indicator-0"></div>
+                        <div class="w-2 h-2 rounded-full bg-gray-300" id="indicator-1"></div>
+                        <div class="w-2 h-2 rounded-full bg-gray-300" id="indicator-2"></div>
+                        <div class="w-2 h-2 rounded-full bg-gray-300" id="indicator-3"></div>
+                    </div>
+                </div>
+                
+                <!-- 可滑動的容器 -->
+                <div class="swiper-container relative overflow-hidden" style="height: 260px;">
+                    <!-- 滑動頁面容器 -->
+                    <div class="swiper-wrapper flex transition-transform duration-300 ease-out" id="assetSwiper" style="width: 400%;">
+                        
+                        <!-- 頁面1: 總資產配置 -->
+                        <div class="swiper-slide flex-shrink-0" style="width: 25%;">
+                            <div class="relative mb-3" style="height: 140px;">
+                                <canvas id="pieChart"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <p class="text-2xl font-bold" style="color: var(--card-text-primary)">45%</p>
+                                        <p class="text-xs" style="color: var(--card-text-secondary)">美股</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-1.5 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #f59e0b;"></div>
+                                        <span style="color: var(--card-text-secondary)">現金</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">20%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #6b7280;"></div>
+                                        <span style="color: var(--card-text-secondary)">債券</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">25%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #ef4444;"></div>
+                                        <span style="color: var(--card-text-secondary)">美股</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">45%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #22c55e;"></div>
+                                        <span style="color: var(--card-text-secondary)">台股</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">8%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #1e3a8a;"></div>
+                                        <span style="color: var(--card-text-secondary)">結構型</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">2%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 頁面2: 美股詳細配置 -->
+                        <div class="swiper-slide flex-shrink-0" style="width: 25%;">
+                            <div class="relative mb-4" style="height: 160px;">
+                                <canvas id="usStockChart"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <p class="text-2xl font-bold" style="color: var(--card-text-primary)">35%</p>
+                                        <p class="text-xs" style="color: var(--card-text-secondary)">AAPL</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #ef4444;"></div>
+                                        <span style="color: var(--card-text-secondary)">AAPL</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">35%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #10b981;"></div>
+                                        <span style="color: var(--card-text-secondary)">MSFT</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">25%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #3b82f6;"></div>
+                                        <span style="color: var(--card-text-secondary)">GOOGL</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">20%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #f59e0b;"></div>
+                                        <span style="color: var(--card-text-secondary)">其他</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">20%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 頁面3: 債券詳細配置 -->
+                        <div class="swiper-slide flex-shrink-0" style="width: 25%;">
+                            <div class="relative mb-4" style="height: 160px;">
+                                <canvas id="bondChart"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <p class="text-2xl font-bold" style="color: var(--card-text-primary)">40%</p>
+                                        <p class="text-xs" style="color: var(--card-text-secondary)">政府債</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #6b7280;"></div>
+                                        <span style="color: var(--card-text-secondary)">政府債</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">40%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #8b5cf6;"></div>
+                                        <span style="color: var(--card-text-secondary)">公司債</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">35%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #14b8a6;"></div>
+                                        <span style="color: var(--card-text-secondary)">高收益債</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">25%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 頁面4: 台股配置 -->
+                        <div class="swiper-slide flex-shrink-0" style="width: 25%;">
+                            <div class="relative mb-4" style="height: 160px;">
+                                <canvas id="structuredChart"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <p class="text-2xl font-bold" style="color: var(--card-text-primary)">30%</p>
+                                        <p class="text-xs" style="color: var(--card-text-secondary)">台積電</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #22c55e;"></div>
+                                        <span style="color: var(--card-text-secondary)">台積電</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">30%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #3b82f6;"></div>
+                                        <span style="color: var(--card-text-secondary)">聯發科</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">25%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #f59e0b;"></div>
+                                        <span style="color: var(--card-text-secondary)">鴻海</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">20%</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 rounded-full mr-2" style="background: #8b5cf6;"></div>
+                                        <span style="color: var(--card-text-secondary)">其他</span>
+                                    </div>
+                                    <span style="color: var(--card-text-primary)" class="font-medium">25%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 美股投資 - 2列寬卡片 -->
+            <div class="col-span-2 compact-card p-4 relative overflow-hidden" style="border-radius: 16px;">
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-base" style="color: var(--header-text)">美股</h4>
+                        <span class="profit text-sm font-medium">+12%</span>
+                    </div>
+                    <div class="text-xl font-bold mb-2" style="color: var(--card-text-primary)">4,500,000</div>
+                    <div style="height: 48px;">
+                        <svg class="w-full h-full" viewBox="0 0 200 48" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="stockGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 0.3"/>
+                                    <stop offset="100%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 0"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M 0 32 Q 40 28 80 24 T 160 16 T 200 12" 
+                                  stroke="oklch(0.65 0.20 15)" 
+                                  stroke-width="2" 
+                                  fill="none"/>
+                            <path d="M 0 32 Q 40 28 80 24 T 160 16 T 200 12 L 200 48 L 0 48 Z" 
+                                  fill="url(#stockGradient)"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 債券/台股投資 - 2列寬卡片 (可滑動) -->
+            <div class="col-span-2 compact-card p-4 relative overflow-hidden" style="border-radius: 16px;">
+                <!-- 滑動容器 -->
+                <div class="bond-swiper-container relative overflow-hidden h-full">
+                    <div class="bond-swiper-wrapper flex transition-transform duration-300 ease-out" id="bondSwiper" style="width: 200%;">
+                        
+                        <!-- 頁面1: 債券投資 -->
+                        <div class="bond-swiper-slide flex-shrink-0" style="width: 50%;">
+                            <div class="relative z-10">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-base" style="color: var(--header-text)">債券</h4>
+                                    <span class="profit text-sm font-medium">+3%</span>
+                                </div>
+                                <div class="text-xl font-bold mb-2" style="color: var(--card-text-primary)">2,500,000</div>
+                                <div style="height: 48px;">
+                                    <svg class="w-full h-full" viewBox="0 0 200 48" preserveAspectRatio="none">
+                                        <defs>
+                                            <linearGradient id="bondGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                <stop offset="0%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 0.3"/>
+                                                <stop offset="100%" style="stop-color: oklch(0.65 0.20 15); stop-opacity: 0"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M 0 28 Q 50 26 100 24 T 200 20" 
+                                              stroke="oklch(0.65 0.20 15)" 
+                                              stroke-width="2" 
+                                              fill="none"/>
+                                        <path d="M 0 28 Q 50 26 100 24 T 200 20 L 200 48 L 0 48 Z" 
+                                              fill="url(#bondGradient)"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 頁面2: 台股投資 -->
+                        <div class="bond-swiper-slide flex-shrink-0" style="width: 50%;">
+                            <div class="relative z-10">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-base" style="color: var(--header-text)">台股</h4>
+                                    <span class="profit text-sm font-medium">+8%</span>
+                                </div>
+                                <div class="text-xl font-bold mb-2" style="color: var(--card-text-primary)">800,000</div>
+                                <div style="height: 48px;">
+                                    <svg class="w-full h-full" viewBox="0 0 200 48" preserveAspectRatio="none">
+                                        <defs>
+                                            <linearGradient id="twStockGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                <stop offset="0%" style="stop-color: oklch(0.55 0.20 145); stop-opacity: 0.3"/>
+                                                <stop offset="100%" style="stop-color: oklch(0.55 0.20 145); stop-opacity: 0"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M 0 35 Q 30 32 60 28 Q 90 22 120 25 Q 150 20 180 15 L 200 12" 
+                                              stroke="oklch(0.55 0.20 145)" 
+                                              stroke-width="2" 
+                                              fill="none"/>
+                                        <path d="M 0 35 Q 30 32 60 28 Q 90 22 120 25 Q 150 20 180 15 L 200 12 L 200 48 L 0 48 Z" 
+                                              fill="url(#twStockGradient)"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 債券每月配息 - 跨4列底部卡片 -->
+            <div class="col-span-4 p-4" style="background: var(--background); border-radius: 16px; border: 1px solid oklch(0.85 0.01 220 / 0.2);">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="font-semibold text-base" style="color: var(--header-text)">債券每月配息</h4>
+                    <div class="text-right">
+                        <div class="text-xs" style="color: var(--card-text-secondary)">年配息</div>
+                        <div class="text-lg font-bold profit">125,000</div>
+                    </div>
+                </div>
+                <div class="relative" style="height: 60px;">
+                    <!-- 網格線背景 -->
+                    <div class="absolute inset-0">
+                        <svg class="w-full h-full" viewBox="0 0 400 60" preserveAspectRatio="none">
+                            <!-- 水平網格線 -->
+                            <g stroke="oklch(0.85 0.01 220 / 0.3)" stroke-width="0.5">
+                                <line x1="0" y1="12" x2="400" y2="12"/>
+                                <line x1="0" y1="24" x2="400" y2="24"/>
+                                <line x1="0" y1="36" x2="400" y2="36"/>
+                                <line x1="0" y1="48" x2="400" y2="48"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <!-- 長條圖 -->
+                    <div class="absolute inset-0 flex items-end justify-around px-4">
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 36px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 24px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 42px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 28px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 34px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 22px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 38px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 26px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 40px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 30px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 44px;"></div>
+                        <div class="bg-green-600 rounded-t-lg" style="width: 14px; height: 32px;"></div>
+                    </div>
+                </div>
+                <!-- 月份標籤 -->
+                <div class="flex justify-around mt-1 px-4 text-xs" style="color: var(--card-text-secondary);">
+                    <span>1</span>
+                    <span>2</span>
+                    <span>3</span>
+                    <span>4</span>
+                    <span>5</span>
+                    <span>6</span>
+                    <span>7</span>
+                    <span>8</span>
+                    <span>9</span>
+                    <span>10</span>
+                    <span>11</span>
+                    <span>12</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 整合式表格區域 -->
+        <div class="integrated-table">
+            <!-- 標籤切換 -->
+            <div class="tab-container">
+                <div class="flex">
+                    <button class="tab-button active" onclick="switchTab('monthly')">月度資產</button>
+                    <button class="tab-button" onclick="switchTab('bonds')">公司債</button>
+                    <button class="tab-button" onclick="switchTab('pnl')">損益表</button>
+                </div>
+            </div>
+
+            <!-- 工具列 -->
+            <div class="flex justify-between items-center p-4 border-b" style="border-color: var(--border)">
+                <h3 class="font-semibold" style="color: var(--header-text)" id="tableTitle">📋 月度資產明細</h3>
+                <div class="flex space-x-2">
+                    <button class="p-2 hover:bg-gray-100 rounded">
+                        <i data-lucide="arrow-up-down" class="w-4 h-4"></i>
+                    </button>
+                    <button class="p-2 hover:bg-gray-100 rounded">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                    <button class="p-2 hover:bg-gray-100 rounded">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                    <button class="p-2 hover:bg-gray-100 rounded">
+                        <i data-lucide="edit" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 月度資產明細 -->
+            <div id="monthly-tab" class="tab-content active">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead style="background: oklch(0.98 0.005 220)">
+                            <tr>
+                                <th class="p-2 text-left font-semibold">日期</th>
+                                <th class="p-2 text-left font-semibold">現金</th>
+                                <th class="p-2 text-left font-semibold">美股</th>
+                                <th class="p-2 text-left font-semibold">定期定額</th>
+                                <th class="p-2 text-left font-semibold">債券</th>
+                                <th class="p-2 text-left font-semibold">結構型商品</th>
+                                <th class="p-2 text-left font-semibold">台股</th>
+                                <th class="p-2 text-left font-semibold">台股折合</th>
+                                <th class="p-2 text-left font-semibold">已確利息</th>
+                                <th class="p-2 text-left font-semibold">匯入</th>
+                                <th class="p-2 text-left font-semibold">美股成本</th>
+                                <th class="p-2 text-left font-semibold">定期定額成本</th>
+                                <th class="p-2 text-left font-semibold">債券成本</th>
+                                <th class="p-2 text-left font-semibold">台股成本</th>
+                                <th class="p-2 text-left font-semibold">備註</th>
+                                <th class="p-2 text-left font-semibold">總資產</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-2">Aug-08</td>
+                                <td class="p-2">2005</td>
+                                <td class="p-2">6317.80</td>
+                                <td class="p-2">10115.02</td>
+                                <td class="p-2">15400.67</td>
+                                <td class="p-2">215408.5</td>
+                                <td class="p-2">0.0</td>
+                                <td class="p-2">186501.0</td>
+                                <td class="p-2">5703.15695</td>
+                                <td class="p-2">13952.5</td>
+                                <td class="p-2">0.0</td>
+                                <td class="p-2">16380.85</td>
+                                <td class="p-2">13655.04</td>
+                                <td class="p-2">206324.0</td>
+                                <td class="p-2">5631.375</td>
+                                <td class="p-2">260945.96525</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-2">Aug-09</td>
+                                <td class="p-2">2105</td>
+                                <td class="p-2">6420.15</td>
+                                <td class="p-2">10205.30</td>
+                                <td class="p-2">15500.20</td>
+                                <td class="p-2">218500.0</td>
+                                <td class="p-2">0.0</td>
+                                <td class="p-2">187200.0</td>
+                                <td class="p-2">5750.25</td>
+                                <td class="p-2">14000.0</td>
+                                <td class="p-2">0.0</td>
+                                <td class="p-2">16450.00</td>
+                                <td class="p-2">13700.50</td>
+                                <td class="p-2">207500.0</td>
+                                <td class="p-2">5680.00</td>
+                                <td class="p-2">264661.40</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-2">Aug-10</td>
+                                <td class="p-2">2200</td>
+                                <td class="p-2">6525.30</td>
+                                <td class="p-2">10295.75</td>
+                                <td class="p-2">15600.85</td>
+                                <td class="p-2">220000.0</td>
+                                <td class="p-2">0.0</td>
+                                <td class="p-2">188000.0</td>
+                                <td class="p-2">5800.50</td>
+                                <td class="p-2">14150.0</td>
+                                <td class="p-2">0.0</td>
+                                <td class="p-2">16500.25</td>
+                                <td class="p-2">13750.80</td>
+                                <td class="p-2">208800.0</td>
+                                <td class="p-2">5720.00</td>
+                                <td class="p-2">268372.70</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 公司債明細 -->
+            <div id="bonds-tab" class="tab-content">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead style="background: oklch(0.98 0.005 220)">
+                            <tr>
+                                <th class="p-2 text-left font-semibold">申購日</th>
+                                <th class="p-2 text-left font-semibold">名稱</th>
+                                <th class="p-2 text-left font-semibold">票面利率</th>
+                                <th class="p-2 text-left font-semibold">殖利率</th>
+                                <th class="p-2 text-left font-semibold">申購價</th>
+                                <th class="p-2 text-left font-semibold">申購金額</th>
+                                <th class="p-2 text-left font-semibold">持有面額</th>
+                                <th class="p-2 text-left font-semibold">交易金額</th>
+                                <th class="p-2 text-left font-semibold">現值</th>
+                                <th class="p-2 text-left font-semibold">已領利息</th>
+                                <th class="p-2 text-left font-semibold">含息損益</th>
+                                <th class="p-2 text-left font-semibold">報酬率</th>
+                                <th class="p-2 text-left font-semibold">配息月份</th>
+                                <th class="p-2 text-left font-semibold">單次配息</th>
+                                <th class="p-2 text-left font-semibold">年度配息</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-2">Mar-6</td>
+                                <td class="p-2">2030</td>
+                                <td class="p-2">債券</td>
+                                <td class="p-2">5.2%</td>
+                                <td class="p-2">2.34%</td>
+                                <td class="p-2">100.00</td>
+                                <td class="p-2">200000</td>
+                                <td class="p-2">200000</td>
+                                <td class="p-2">200000.00</td>
+                                <td class="p-2">3104.0</td>
+                                <td class="p-2">20050.0</td>
+                                <td class="p-2 profit">7.84%</td>
+                                <td class="p-2">3.16%</td>
+                                <td class="p-2">一</td>
+                                <td class="p-2">一</td>
+                                <td class="p-2">10400</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-2">Apr-15</td>
+                                <td class="p-2">2028</td>
+                                <td class="p-2">債券</td>
+                                <td class="p-2">4.8%</td>
+                                <td class="p-2">3.1%</td>
+                                <td class="p-2">102.50</td>
+                                <td class="p-2">150000</td>
+                                <td class="p-2">153750</td>
+                                <td class="p-2">151200.00</td>
+                                <td class="p-2">2400.0</td>
+                                <td class="p-2">-150.0</td>
+                                <td class="p-2 loss">-0.1%</td>
+                                <td class="p-2">4.68%</td>
+                                <td class="p-2">六</td>
+                                <td class="p-2">六</td>
+                                <td class="p-2">7200</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border)">
+                                <td class="p-2">Jun-20</td>
+                                <td class="p-2">2032</td>
+                                <td class="p-2">債券</td>
+                                <td class="p-2">6.0%</td>
+                                <td class="p-2">2.8%</td>
+                                <td class="p-2">98.75</td>
+                                <td class="p-2">300000</td>
+                                <td class="p-2">296250</td>
+                                <td class="p-2">305400.00</td>
+                                <td class="p-2">4500.0</td>
+                                <td class="p-2">13650.0</td>
+                                <td class="p-2 profit">4.61%</td>
+                                <td class="p-2">5.87%</td>
+                                <td class="p-2">十二</td>
+                                <td class="p-2">十二</td>
+                                <td class="p-2">18000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 損益表 -->
+            <div id="pnl-tab" class="tab-content">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead style="background: oklch(0.98 0.005 220)">
+                            <tr>
+                                <th class="p-3 text-left font-semibold text-sm">交易日期</th>
+                                <th class="p-3 text-left font-semibold text-sm">資產</th>
+                                <th class="p-3 text-left font-semibold text-sm">買入價格</th>
+                                <th class="p-3 text-left font-semibold text-sm">賣出價格</th>
+                                <th class="p-3 text-left font-semibold text-sm">損益</th>
+                                <th class="p-3 text-left font-semibold text-sm">手續費</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="p-3 text-sm">2024/12/01</td>
+                                <td class="p-3 text-sm">AAPL</td>
+                                <td class="p-3 text-sm">150.00</td>
+                                <td class="p-3 text-sm">165.50</td>
+                                <td class="p-3 text-sm profit">+15.50</td>
+                                <td class="p-3 text-sm">2.50</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增資料彈出表單 -->
+    <div id="addDataModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <!-- 表單標題欄 -->
+            <div class="bg-gray-50 px-6 py-4 border-b flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-gray-800">新增月度資產明細</h2>
+                <button onclick="closeAddDataModal()" class="text-gray-500 hover:text-gray-700 p-1">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <!-- 表單內容 -->
+            <div class="overflow-y-auto max-h-[70vh]">
+                <form id="addDataForm" class="p-6">
+                    <!-- 基本資訊區塊 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4 pb-2 border-b">📅 基本資訊</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">日期 *</label>
+                                <input type="date" id="inputDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">備註</label>
+                                <input type="text" id="inputNotes" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="選填">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 資產明細區塊 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4 pb-2 border-b">💰 資產明細</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">現金</label>
+                                <input type="number" id="inputCash" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">美股</label>
+                                <input type="number" id="inputUsStock" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">定期定額</label>
+                                <input type="number" id="inputRegularInvestment" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">債券</label>
+                                <input type="number" id="inputBonds" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">結構型商品</label>
+                                <input type="number" id="inputStructuredProducts" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">台股</label>
+                                <input type="number" id="inputTwStock" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">台股折合</label>
+                                <input type="number" id="inputTwStockConverted" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">已確利息</label>
+                                <input type="number" id="inputConfirmedInterest" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">匯入</label>
+                                <input type="number" id="inputDeposit" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 成本明細區塊 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4 pb-2 border-b">📊 成本明細</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">美股成本</label>
+                                <input type="number" id="inputUsStockCost" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">定期定額成本</label>
+                                <input type="number" id="inputRegularInvestmentCost" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">債券成本</label>
+                                <input type="number" id="inputBondsCost" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">台股成本</label>
+                                <input type="number" id="inputTwStockCost" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 計算結果預覽 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4 pb-2 border-b">🧮 計算結果</h3>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600">總資產預計</div>
+                                    <div id="previewTotalAssets" class="text-2xl font-bold text-green-600">0</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600">資產配置</div>
+                                    <div class="text-xs text-gray-500">儲存後更新</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600">損益計算</div>
+                                    <div class="text-xs text-gray-500">儲存後更新</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- 按鈕區域 -->
+            <div class="bg-gray-50 px-6 py-4 border-t flex justify-end space-x-3">
+                <button type="button" onclick="closeAddDataModal()" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    取消
+                </button>
+                <button type="button" onclick="saveNewData()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    儲存資料
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化圖標
+        lucide.createIcons();
+
+        // 資產配置滑動功能
+        let currentSlide = 0;
+        const totalSlides = 4;
+        const assetSwiper = document.getElementById('assetSwiper');
+        const assetTitle = document.getElementById('assetTitle');
+        
+        const slideData = [
+            { title: '資產配置' },
+            { title: '美股配置' },
+            { title: '債券配置' },
+            { title: '台股配置' }
+        ];
+        
+        function updateSlide(index) {
+            currentSlide = index;
+            const translateX = -index * 100;
+            assetSwiper.style.transform = `translateX(${translateX}%)`;
+            
+            // 更新標題
+            assetTitle.textContent = slideData[index].title;
+            
+            // 更新指示器
+            for (let i = 0; i < totalSlides; i++) {
+                const indicator = document.getElementById(`indicator-${i}`);
+                indicator.className = i === index ? 
+                    'w-2 h-2 rounded-full bg-blue-500' : 
+                    'w-2 h-2 rounded-full bg-gray-300';
+            }
+        }
+        
+        function nextSlide() {
+            updateSlide((currentSlide + 1) % totalSlides);
+        }
+        
+        function prevSlide() {
+            updateSlide((currentSlide - 1 + totalSlides) % totalSlides);
+        }
+        
+        // 觸控滑動支持
+        let startX = 0;
+        let startY = 0;
+        let isSwipe = false;
+        
+        const swiperContainer = document.querySelector('.swiper-container');
+        
+        swiperContainer.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            isSwipe = false;
+        });
+        
+        swiperContainer.addEventListener('touchmove', (e) => {
+            if (!startX || !startY) return;
+            
+            const diffX = startX - e.touches[0].clientX;
+            const diffY = startY - e.touches[0].clientY;
+            
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                isSwipe = true;
+                e.preventDefault();
+            }
+        });
+        
+        swiperContainer.addEventListener('touchend', (e) => {
+            if (!isSwipe) return;
+            
+            const diffX = startX - e.changedTouches[0].clientX;
+            
+            if (Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+            
+            startX = 0;
+            startY = 0;
+            isSwipe = false;
+        });
+        
+        // 滑鼠滑動支持
+        let mouseStartX = 0;
+        let isMouseDown = false;
+        
+        swiperContainer.addEventListener('mousedown', (e) => {
+            mouseStartX = e.clientX;
+            isMouseDown = true;
+        });
+        
+        swiperContainer.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            e.preventDefault();
+        });
+        
+        swiperContainer.addEventListener('mouseup', (e) => {
+            if (!isMouseDown) return;
+            
+            const diffX = mouseStartX - e.clientX;
+            
+            if (Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+            
+            isMouseDown = false;
+        });
+        
+        swiperContainer.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+        });
+
+        // 債券/台股卡片滑動功能
+        let bondCurrentSlide = 0;
+        const bondTotalSlides = 2;
+        const bondSwiper = document.getElementById('bondSwiper');
+        
+        function updateBondSlide(index) {
+            bondCurrentSlide = index;
+            const translateX = -index * 100;
+            bondSwiper.style.transform = `translateX(${translateX}%)`;
+        }
+        
+        function nextBondSlide() {
+            updateBondSlide((bondCurrentSlide + 1) % bondTotalSlides);
+        }
+        
+        function prevBondSlide() {
+            updateBondSlide((bondCurrentSlide - 1 + bondTotalSlides) % bondTotalSlides);
+        }
+        
+        // 債券卡片觸控滑動支持
+        let bondStartX = 0;
+        let bondStartY = 0;
+        let bondIsSwipe = false;
+        
+        const bondSwiperContainer = document.querySelector('.bond-swiper-container');
+        
+        bondSwiperContainer.addEventListener('touchstart', (e) => {
+            bondStartX = e.touches[0].clientX;
+            bondStartY = e.touches[0].clientY;
+            bondIsSwipe = false;
+        });
+        
+        bondSwiperContainer.addEventListener('touchmove', (e) => {
+            if (!bondStartX || !bondStartY) return;
+            
+            const diffX = bondStartX - e.touches[0].clientX;
+            const diffY = bondStartY - e.touches[0].clientY;
+            
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                bondIsSwipe = true;
+                e.preventDefault();
+            }
+        });
+        
+        bondSwiperContainer.addEventListener('touchend', (e) => {
+            if (!bondIsSwipe) return;
+            
+            const diffX = bondStartX - e.changedTouches[0].clientX;
+            
+            if (Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    nextBondSlide();
+                } else {
+                    prevBondSlide();
+                }
+            }
+            
+            bondStartX = 0;
+            bondStartY = 0;
+            bondIsSwipe = false;
+        });
+        
+        // 債券卡片滑鼠滑動支持
+        let bondMouseStartX = 0;
+        let bondIsMouseDown = false;
+        
+        bondSwiperContainer.addEventListener('mousedown', (e) => {
+            bondMouseStartX = e.clientX;
+            bondIsMouseDown = true;
+        });
+        
+        bondSwiperContainer.addEventListener('mousemove', (e) => {
+            if (!bondIsMouseDown) return;
+            e.preventDefault();
+        });
+        
+        bondSwiperContainer.addEventListener('mouseup', (e) => {
+            if (!bondIsMouseDown) return;
+            
+            const diffX = bondMouseStartX - e.clientX;
+            
+            if (Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    nextBondSlide();
+                } else {
+                    prevBondSlide();
+                }
+            }
+            
+            bondIsMouseDown = false;
+        });
+        
+        bondSwiperContainer.addEventListener('mouseleave', () => {
+            bondIsMouseDown = false;
+        });
+
+        // 標籤切換功能
+        function switchTab(tabName) {
+            // 隱藏所有內容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有標籤的 active 狀態
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // 顯示選中的內容
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // 激活選中的標籤
+            event.target.classList.add('active');
+            
+            // 更新表格標題
+            const titles = {
+                'monthly': '📋 月度資產明細',
+                'bonds': '📋 公司債明細',
+                'pnl': '📋 損益表'
+            };
+            document.getElementById('tableTitle').textContent = titles[tabName];
+        }
+
+        // 圓餅圖 - 總資產配置 (按列表順序：現金, 債券, 美股, 台股, 結構型)
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [20, 25, 45, 8, 2], // 現金, 債券, 美股, 台股, 結構型
+                    backgroundColor: [
+                        '#f59e0b', // 現金 - 橘色
+                        '#6b7280', // 債券 - 灰色
+                        '#ef4444', // 美股 - 紅色
+                        '#22c55e', // 台股 - 綠色
+                        '#1e3a8a'  // 結構型 - 深藍色
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                cutout: '65%'
+            }
+        });
+
+        // 頂部導航欄功能
+        function openClientList() {
+            // 客戶列表功能
+            alert('開啟客戶列表');
+        }
+
+        function openSortMenu() {
+            // 排序功能
+            alert('開啟排序選單');
+        }
+
+        function addNewData() {
+            // 顯示新增資料表單
+            document.getElementById('addDataModal').classList.remove('hidden');
+        }
+
+        function closeAddDataModal() {
+            // 關閉表單
+            document.getElementById('addDataModal').classList.add('hidden');
+        }
+
+        function saveNewData() {
+            // 收集表單資料
+            const formData = {
+                date: document.getElementById('inputDate').value,
+                cash: parseFloat(document.getElementById('inputCash').value) || 0,
+                usStock: parseFloat(document.getElementById('inputUsStock').value) || 0,
+                regularInvestment: parseFloat(document.getElementById('inputRegularInvestment').value) || 0,
+                bonds: parseFloat(document.getElementById('inputBonds').value) || 0,
+                structuredProducts: parseFloat(document.getElementById('inputStructuredProducts').value) || 0,
+                twStock: parseFloat(document.getElementById('inputTwStock').value) || 0,
+                twStockConverted: parseFloat(document.getElementById('inputTwStockConverted').value) || 0,
+                confirmedInterest: parseFloat(document.getElementById('inputConfirmedInterest').value) || 0,
+                deposit: parseFloat(document.getElementById('inputDeposit').value) || 0,
+                usStockCost: parseFloat(document.getElementById('inputUsStockCost').value) || 0,
+                regularInvestmentCost: parseFloat(document.getElementById('inputRegularInvestmentCost').value) || 0,
+                bondsCost: parseFloat(document.getElementById('inputBondsCost').value) || 0,
+                twStockCost: parseFloat(document.getElementById('inputTwStockCost').value) || 0,
+                notes: document.getElementById('inputNotes').value,
+                totalAssets: 0 // 將來用公式計算
+            };
+
+            // 計算總資產 (簡單相加，之後可調整公式)
+            formData.totalAssets = formData.cash + formData.usStock + formData.regularInvestment + 
+                                 formData.bonds + formData.structuredProducts + formData.twStock + 
+                                 formData.confirmedInterest;
+
+            console.log('新增資料:', formData);
+            
+            // TODO: 這裡之後會儲存到資料庫
+            alert('資料已儲存！(目前為測試模式)');
+            
+            // 關閉表單並清空
+            closeAddDataModal();
+            document.getElementById('addDataForm').reset();
+            updatePreviewTotalAssets(); // 重置預覽
+        }
+
+        // 即時更新總資產預覽
+        function updatePreviewTotalAssets() {
+            const cash = parseFloat(document.getElementById('inputCash').value) || 0;
+            const usStock = parseFloat(document.getElementById('inputUsStock').value) || 0;
+            const regularInvestment = parseFloat(document.getElementById('inputRegularInvestment').value) || 0;
+            const bonds = parseFloat(document.getElementById('inputBonds').value) || 0;
+            const structuredProducts = parseFloat(document.getElementById('inputStructuredProducts').value) || 0;
+            const twStock = parseFloat(document.getElementById('inputTwStock').value) || 0;
+            const confirmedInterest = parseFloat(document.getElementById('inputConfirmedInterest').value) || 0;
+            
+            const totalAssets = cash + usStock + regularInvestment + bonds + structuredProducts + twStock + confirmedInterest;
+            
+            document.getElementById('previewTotalAssets').textContent = totalAssets.toLocaleString('zh-TW');
+        }
+
+        // 監聽所有數字輸入框的變化
+        document.addEventListener('DOMContentLoaded', function() {
+            const numberInputs = [
+                'inputCash', 'inputUsStock', 'inputRegularInvestment', 'inputBonds',
+                'inputStructuredProducts', 'inputTwStock', 'inputConfirmedInterest'
+            ];
+            
+            numberInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('input', updatePreviewTotalAssets);
+                }
+            });
+        });
+
+        // 初始化其他圖表
+        // 美股配置圖表
+        const usStockCtx = document.getElementById('usStockChart').getContext('2d');
+        new Chart(usStockCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [35, 25, 20, 20],
+                    backgroundColor: ['#ef4444', '#10b981', '#3b82f6', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                cutout: '65%'
+            }
+        });
+
+        // 債券配置圖表
+        const bondCtx = document.getElementById('bondChart').getContext('2d');
+        new Chart(bondCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [40, 35, 25],
+                    backgroundColor: ['#6b7280', '#8b5cf6', '#14b8a6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                cutout: '65%'
+            }
+        });
+
+        // 台股配置圖表
+        const structuredCtx = document.getElementById('structuredChart').getContext('2d');
+        new Chart(structuredCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [30, 25, 20, 25], // 台積電, 聯發科, 鴻海, 其他
+                    backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                cutout: '65%'
+            }
+        });
+
+    </script>
+</body>
+</html>

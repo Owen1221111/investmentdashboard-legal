@@ -1,0 +1,143 @@
+:root {
+  /* 底色 - 更低飽和度的灰調 */
+  --background: oklch(0.97 0.005 220);
+  --foreground: oklch(0.20 0.01 220);
+  
+  /* 卡片 - 微妙的暖白材質 */
+  --card: oklch(0.99 0.002 60);
+  --card-foreground: oklch(0.20 0.01 220);
+  --card-shadow: oklch(0.15 0.01 220 / 0.06);
+  
+  /* 高級卡片 - 稍微深一點的背景 */
+  --card-elevated: oklch(0.95 0.003 220);
+  --card-subtle: oklch(0.92 0.005 220);
+  
+  /* 表頭字體色 - 比底色深一階 */
+  --header-text: oklch(0.25 0.03 220);
+  --subheader-text: oklch(0.35 0.02 220);
+  
+  /* 卡片內字體色 - 更深，好辨識 */
+  --card-text-primary: oklch(0.12 0.02 220);
+  --card-text-secondary: oklch(0.45 0.02 220);
+  
+  /* 按鈕配色 - 可與底色字體色對調 */
+  --button-primary: oklch(0.25 0.03 220);
+  --button-primary-hover: oklch(0.20 0.03 220);
+  --button-secondary: oklch(0.90 0.01 220);
+  --button-secondary-hover: oklch(0.85 0.01 220);
+  
+  /* 永豐風格派餅配色 */
+  --chart-cash: oklch(0.75 0.15 45);      /* 金黃色 - 現金 */
+  --chart-stocks: oklch(0.65 0.20 15);    /* 橘紅色 - 美股 */
+  --chart-bonds: oklch(0.55 0.18 140);    /* 綠色 - 債券 */
+  --chart-structured: oklch(0.45 0.15 260); /* 紫色 - 結構型 */
+  
+  /* 走勢圖漸層 */
+  --trend-gradient-start: oklch(0.65 0.20 15 / 0.8);
+  --trend-gradient-end: oklch(0.65 0.20 15 / 0.1);
+  
+  /* 收益指示色 - 更低飽和度 */
+  --profit-color: oklch(0.45 0.08 150);   /* 低飽和綠色 */
+  --profit-light: oklch(0.60 0.06 150);   /* 淺綠色 */
+  --loss-color: oklch(0.50 0.08 25);      /* 低飽和紅色 */
+  
+  /* 高級灰色系 */
+  --premium-gray: oklch(0.88 0.003 220);   /* 高級淺灰 */
+  --premium-gray-text: oklch(0.35 0.01 220); /* 高級灰色文字 */
+  
+  /* 邊框和分隔線 */
+  --border: oklch(0.90 0.01 220);
+  --border-hover: oklch(0.80 0.02 220);
+  
+  /* 字體設定 */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* 圓角和陰影 */
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow-card: 0 4px 24px oklch(0.15 0.02 220 / 0.08);
+  --shadow-card-hover: 0 8px 32px oklch(0.15 0.02 220 / 0.12);
+  
+  /* 間距系統 */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+}
+
+/* 玻璃材質效果 */
+.glass-card {
+  background: oklch(1.0000 0 0 / 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid oklch(1.0000 0 0 / 0.2);
+}
+
+/* 高級玻璃圖表效果 */
+.glass-chart {
+  background: oklch(1.0000 0 0 / 0.7);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid oklch(1.0000 0 0 / 0.18);
+  box-shadow: 0 8px 32px oklch(0.15 0.01 220 / 0.08);
+}
+
+/* 漸層走勢圖背景 */
+.trend-gradient {
+  background: linear-gradient(
+    180deg,
+    var(--trend-gradient-start) 0%,
+    var(--trend-gradient-end) 100%
+  );
+}
+
+/* 派餅圖配色類 */
+.chart-cash { color: var(--chart-cash); }
+.chart-stocks { color: var(--chart-stocks); }
+.chart-bonds { color: var(--chart-bonds); }
+.chart-structured { color: var(--chart-structured); }
+
+/* 數據表格樣式 */
+.data-table {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border);
+}
+
+.data-table th {
+  background: oklch(0.98 0.005 220);
+  color: var(--header-text);
+  font-weight: 600;
+}
+
+.data-table td {
+  color: var(--card-text-primary);
+  border-bottom: 1px solid var(--border);
+}
+
+/* 按鈕樣式 */
+.btn-primary {
+  background: var(--button-primary);
+  color: white;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--button-primary-hover);
+  box-shadow: var(--shadow-card);
+}
+
+.btn-secondary {
+  background: var(--button-secondary);
+  color: var(--button-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.btn-secondary:hover {
+  background: var(--button-secondary-hover);
+  border-color: var(--border-hover);
+}
